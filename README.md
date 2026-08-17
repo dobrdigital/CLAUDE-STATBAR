@@ -143,3 +143,7 @@ bash test-statusline.sh
 ## 📄 License
 
 [MIT](LICENSE). Free to use, fork, and build on.
+
+---
+
+*Built with ❤ at **REAILISM.DEV** — because your spend deserves the truth.*
