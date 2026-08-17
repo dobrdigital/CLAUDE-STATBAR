@@ -1,0 +1,26 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+    "ANTHROPIC_AUTH_TOKEN": "sk-or-v1-ЗАМЕНИ_НА_СВОЙ_КЛЮЧ",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION": "deepseek/deepseek-v4-flash-0731",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME": "DeepSeek V4 Flash",
+    "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION": "DeepSeek V4 Flash via OpenRouter"
+  },
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "availableModels": [
+    "sonnet",
+    "opus",
+    "haiku",
+    "fable",
+    "claude-sonnet-5",
+    "claude-opus-5",
+    "claude-haiku-4.5",
+    "claude-fable-5",
+    "deepseek/deepseek-v4-flash-0731"
+  ],
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "theme": "dark"
+}

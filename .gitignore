@@ -1,0 +1,13 @@
+# Real config — contains your actual OpenRouter key, NEVER commit
+settings.json
+settings.local.json
+
+# Status line caches (prices, balance) — local data
+cache/
+
+# Local OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
