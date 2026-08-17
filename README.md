@@ -1,59 +1,81 @@
-# Claude Code Statusline for OpenRouter
+# ⚡ CLAUDE-STATBAR
 
-Статус-строка (statusline) для Claude Code, работающего через OpenRouter. Показывает **реальные** данные из API OpenRouter: баланс ключа, цену модели за 1M токенов (как на сайте), токены, кэш и доступный контекст.
+**The statusline that finally tells the truth about your OpenRouter spend.**
+
+Running Claude Code through OpenRouter? The built-in status bar lies to you — it
+uses Anthropic's private price table, invents a fake ~200k context window for
+models that really have 1M, and shows `$0` for models it doesn't recognize.
+
+**CLAUDE-STATBAR** plugs straight into the OpenRouter API and shows you the **real**
+numbers — today's actual price with the provider's discount, your live key
+balance, daily spend, real context limit, and a full token/cache breakdown.
+One glance at the bottom of your terminal and you know exactly what you're
+spending, in real dollars.
+
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform: Windows / macOS / Linux](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+![OpenRouter ready](https://img.shields.io/badge/OpenRouter-ready-orange)
+![Tests: 16/16 passing](https://img.shields.io/badge/tests-16%2F16%20passing-brightgreen)
+![Language: Bash + Python](https://img.shields.io/badge/language-Bash%20%2F%20Python-3776AB)
+
+---
+
+## 🚀 Why you'll love it
+
+| The built-in statusline does this | CLAUDE-STATBAR does this |
+|---|---|
+| Shows `$0` / garbage for non-Anthropic models | Shows the **real price per 1M tokens**, including the provider's live discount |
+| Invents a ~200k context window | Shows the **true model limit** (e.g. 1,048,576 for DeepSeek V4 Flash) with an honest usage % |
+| No balance, no spend | Live **key balance** + **daily spend** |
+| One dull line | A **color-coded, scannable** statusline that works in any terminal |
+
+## ⚡ What it looks like
 
 ```
-V4-flash-0731 | b $30.04 | d $3.87 | P $0.0786 • $0.1572 | in 156.6k / out 291 | c +0 ~15.5k $0.0002 | ctx 156.6k/1M (15%)
+V4-flash-0731 | b $29.81 | d $4.15 | P $0.0786 • $0.1572 | in 156.6k / out 291 | c +0 ~15.5k $0.0002 | ctx 156.6k/1M (15%)
 ```
 
-## Зачем это нужно
+| Segment | Meaning |
+|---|---|
+| `V4-flash-0731` | model (version slug) |
+| `b $29.81` | OpenRouter **key balance** — muted green |
+| `d $4.15` | **daily spend** — muted amber |
+| `P $0.0786 • $0.1572` | model price per 1M tokens — **input • output**, discounted — muted cyan |
+| `in 156.6k / out 291` | session **tokens** in/out — muted blue |
+| `c +0 ~15.5k $0.0002` | cache write (`+`) / cache read (`~`) + its real cost — muted purple |
+| `ctx 156.6k/1M (15%)` | context used vs the **real** limit + honest % — teal |
 
-Claude Code в гейтвей-режиме (`ANTHROPIC_BASE_URL` → OpenRouter):
-- **не знает реальных цен** моделей — его встроенный `cost` считает по таблице Anthropic и для не-Claude моделей даёт `0` или мусор;
-- **подставляет неверный лимит контекста** (`context_window_size`) для не-Claude моделей — например, `~200k` вместо реального `1M` у DeepSeek V4 Flash;
-- **не показывает баланс** ключа.
+Every segment appears **only when the data is real** — it never shows a fake `0`.
 
-Этот скрипт всё это достаёт напрямую из API OpenRouter.
+## ✨ Features
 
-## Что показывает
+- 🔵 **True pricing** — pulls today's effective per-1M price (list price minus the
+  provider's promo) straight from the OpenRouter endpoints API.
+- 💰 **Live balance & spend** — your key balance and daily usage at a glance.
+- 🧠 **Real context** — shows the model's actual available context, not Claude Code's
+  bogus fallback, with a **correct** usage percentage.
+- 🧾 **Token & cache audit** — input/output tokens plus cache read/write *and* what
+  the cache reads actually cost you.
+- 🎨 **Subtle colors** — a quiet, muted palette so the line is readable, not loud.
+- ⚡ **No API spam** — everything is cached (prices 6h, balance/spend 5min), so it
+  never hammers OpenRouter on redraws.
+- 🧪 **Fully tested** — an offline, deterministic test suite (16 checks).
 
-| Сегмент | Значение | Источник |
-|---------|----------|----------|
-| `V4-flash-0731` | короткое имя модели (версия из слага) | payload Claude Code |
-| `b $31.93` | баланс ключа = `total_credits − total_usage` | `GET /api/v1/credits` |
-| `d $2.78/mo $5.99` | расход за сутки / за месяц | `GET /api/v1/key` → `usage_daily` / `usage_monthly` |
-| `P $0.0786 • $0.1572` | цена модели за 1M токенов: вход • выход по **эффективной цене** (прайс минус скидка провайдера, как на сайте) | `GET /api/v1/models/{id}/endpoints` → `pricing` |
-| `in 8.4k / out 1.2k` | входные / выходные токены сессии | payload `context_window` |
-| `c +2.0k ~15.3k $0.0043` | кэш-запись (`+`) / кэш-чтение (`~`) / **стоимость кэш-чтений** | payload `current_usage` + `pricing.input_cache_read` |
-| `ctx 8.4k/1048.6k (1%)` | использовано / **реальный** доступный контекст + % | `GET /api/v1/models` → `top_provider.context_length` |
+## 🛠️ Install in 3 steps
 
-Каждый сегмент выводится **только если значение реально есть** — строка никогда не показывает ложные `0`.
+> Takes about 60 seconds. No build, no dependencies beyond `bash`, `python3`, `curl`.
 
-## Цвета
+**1 — Copy the script**
 
-Приглушённая палитра (256-цвет + `dim`), чтобы строка читалась, но не кричала:
-
-| Сегмент | Цвет |
-|---------|------|
-| `b` (баланс) | приглушённый зелёный |
-| `d` (расход за день) | приглушённый янтарный |
-| цена модели | приглушённый голубой |
-| токены in/out | приглушённый синий |
-| `c` (кэш) | приглушённый пурпурный |
-| `ctx` (контекст) | тёмно-бирюзовый |
-| имя модели | тусклый серый (без цвета) |
-
-## Установка
-
-### 1. Скопируйте скрипт
 ```bash
 cp statusline-command.sh ~/.claude/statusline-command.sh
 ```
 
-### 2. Настройте ключ OpenRouter (env)
-Ключ должен быть доступен как `ANTHROPIC_AUTH_TOKEN` в окружении Claude Code.
+**2 — Point it at your key**
 
-Вариант через `~/.claude/settings.json` (удобно на Windows):
+Open `~/.claude/settings.json` and set your OpenRouter key as an environment
+variable (or `export` it in your shell):
+
 ```json
 {
   "env": {
@@ -62,10 +84,9 @@ cp statusline-command.sh ~/.claude/statusline-command.sh
   }
 }
 ```
-или в шелле: `export ANTHROPIC_AUTH_TOKEN="sk-or-v1-ТВОЙ_КЛЮЧ"`.
 
-### 3. Подключите статус-строку
-Добавьте в `~/.claude/settings.json`:
+**3 — Wire up the statusline**
+
 ```json
 {
   "statusLine": {
@@ -75,45 +96,50 @@ cp statusline-command.sh ~/.claude/statusline-command.sh
 }
 ```
 
-### 4. Перезапустите Claude Code
-Строка перерисовывается на новые события сессии. После первого сообщения появятся токены, контекст и баланс.
+Restart Claude Code, send any message, and watch your terminal come alive. 🎉
 
-## Проверка без Claude Code
+## ▶️ Try it on any machine (no Claude Code needed)
 
-Скрипт читает JSON-пайлоад статус-строки из stdin. Можно протестировать так:
+Pipe a sample payload straight through the script:
 
 ```bash
 cat example-payload.json | ANTHROPIC_AUTH_TOKEN="sk-or-v1-ТВОЙ_КЛЮЧ" bash statusline-command.sh
 ```
 
-## Автотест
+## 🧪 Tests
 
-`test-statusline.sh` прогоняет скрипт на синтетических пайлоадах и проверяет каждый сегмент строки: имя модели, баланс, расход за день, стоимость сессии, токены, кэш, реальный лимит контекста и пересчёт процента. Кэши засеиваются во временный HOME, поэтому тест **не делает ни одного запроса к API** и полностью детерминирован:
+`test-statusline.sh` runs the script against synthetic payloads and asserts every
+segment — including the tricky ones (the honest context %, the discounted price,
+the `M`/`k` formatting). It seeds a throwaway HOME, so it's **offline and
+deterministic**:
 
 ```bash
 bash test-statusline.sh
-# === 17 passed, 0 failed ===
+# === 16 passed, 0 failed ===
 ```
 
-Проверяется в том числе ключевой фикс: Claude Code шлёт `used_percentage` от своего ложного лимита (200k), а строка должна пересчитывать процент от реального лимита модели (1M) — тест убеждается, что показывается `(15%)`, а не `(78%)`.
+## 🔍 How it works
 
-## Как это устроено
+- **List prices + real context** → `GET /api/v1/models` (cached 6h).
+- **Effective price** (your actual cost) → `GET /api/v1/models/{id}/endpoints`
+  — the same discounted number the OpenRouter website shows.
+- **Balance** → `GET /api/v1/credits` (cached 5min).
+- **Daily spend** → `GET /api/v1/key` (cached 5min).
+- Cached under `~/.claude/cache/` so the API is never hit on every redraw.
 
-- **Цены + контекст**: `GET /api/v1/models` → кэш `~/.claude/cache/openrouter-prices.json` (TTL 6 ч). Контекст берётся из `top_provider.context_length` — реально доступный лимит у топ-провайдера, а не теоретический максимум модели. Базовая цена (list) — из `pricing`. **Реальная цена со скидкой** — из `GET /api/v1/models/{id}/endpoints`: берётся самый дешёвый провайдер (напр. StreamLake −44%), потому что на сайте показывается именно эта цена. Здесь же `input_cache_read` для честной стоимости кэш-чтений.
-- **Баланс**: `GET /api/v1/credits` → кэш `~/.claude/cache/openrouter-balance.json` (TTL 5 мин). Важно: эндпоинт `/api/v1/auth/key` для ключей без жёсткого лимита возвращает `limit: null` — поэтому баланс считается через credits.
-- **Расход за день/месяц**: `GET /api/v1/key` → `usage_daily` / `usage_monthly` → кэш `~/.claude/cache/openrouter-key.json` (TTL 5 мин).
-- Скрипт написан на `bash + python3 + curl`. Пайлоад приходит в python через argv.
+## 🔒 Security
 
-## Безопасность
+- **No keys in the repo** — only placeholders. Real keys live in your local
+  `settings.json`, which `.gitignore` keeps out of version control.
+- A **post-write guard** and a **git pre-commit hook** scan every file you write
+  for a real `sk-or-v1-` / `sk-ant-` key and block it before it can be committed.
+- If a key is ever exposed anywhere — rotate it at
+  [OpenRouter → Keys](https://openrouter.ai/settings/keys).
 
-- В репозитории **нет реальных ключей** — только плейсхолдеры.
-- Файлы кэша с данными (`~/.claude/cache/*.json`) находятся вне репозитория.
-- Если ключ где-то засветился — перевыпустите его в [OpenRouter → Keys](https://openrouter.ai/settings/keys).
+## 📦 Dependencies
 
-## Зависимости
+`bash`, `python3`, `curl` — every OS ships them or installs in seconds.
 
-- `bash`, `python3`, `curl` (на Windows — Git Bash / WSL).
+## 📄 License
 
-## Лицензия
-
-MIT. См. [LICENSE](LICENSE).
+[MIT](LICENSE). Free to use, fork, and build on.
