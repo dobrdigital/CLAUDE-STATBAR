@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Pre-commit guard: block any commit that would stage a real API key.
+# The documented placeholders are allowed; a real sk-or-v1- / sk-ant- is not.
+
+status=0
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  # flag only REAL keys (prefix + 8+ hex/alnum), not prose or placeholders
+  if grep -qE 'sk-or-v1-[0-9a-fA-F]{8,}|sk-ant-(api03-)?[0-9A-Za-z]{8,}' "$f" 2>/dev/null; then
+    echo "ABORT: staged file looks like it contains a real API key: $f" >&2
+    status=1
+  fi
+done < <(git diff --cached --name-only)
+exit "$status"
